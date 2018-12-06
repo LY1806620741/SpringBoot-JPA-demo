@@ -1,5 +1,6 @@
 /target/
 !.mvn/wrapper/maven-wrapper.jar
+spy.log
 
 ### STS ###
 .apt_generated
