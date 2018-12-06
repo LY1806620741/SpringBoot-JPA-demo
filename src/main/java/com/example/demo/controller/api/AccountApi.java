@@ -6,6 +6,7 @@ import com.example.demo.domain.User;
 import com.example.demo.domain.User_;
 import com.example.demo.domain.enumeration.TopRankTime;
 import com.example.demo.repository.query.QueryUserRepository;
+import com.example.demo.tools.StaticExpression;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
@@ -32,35 +33,38 @@ import java.util.List;
 @Api(tags = "账号Api")
 @Transactional(readOnly = true)
 public class AccountApi {
-
+    //这么注入会在git commit 的代码审计中报warning
+//    @Autowired
+//    QueryUserRepository userRepository;
+//    @Autowired
+//    EntityManager em;
+    private QueryUserRepository userRepository;
+    private EntityManager em;
+    //用构造器注入就不会
     @Autowired
-    QueryUserRepository userRepository;
-    @Autowired
-    EntityManager em;
+    public AccountApi(QueryUserRepository userRepository,EntityManager em) {
+        this.userRepository = userRepository;
+        this.em=em;
+    }
 
     @ApiOperation("查询账号list")
     @GetMapping("/list")
     public ResponseEntity<List<User>> listUser(UserRVo userRVo) {
-        Specification specification = Specification.<User>where(null);
-
-        specification = specification.and(new Specification() {
-            @Override
-            public Predicate toPredicate(Root root, CriteriaQuery criteriaQuery, CriteriaBuilder criteriaBuilder) {
-                Predicate p1 = criteriaBuilder.and();//创建and谓语
-                if (StringUtils.isNotBlank(userRVo.getName())) {//可选查询，StirngUtils检查==null,==""情况
-                    p1.getExpressions().add(criteriaBuilder.equal(root.get(User_.name), userRVo.getName()));//User_是JPA元模型pom配置hibernate-jpamodelgen后mvnw clean install 就生成了
-                }
-                if (StringUtils.isNotBlank(userRVo.getArea())) {
-                    p1.getExpressions().add(criteriaBuilder.equal(root.get(User_.area), userRVo.getArea()));
-                }
-                if (userRVo.getCreatetime() != null) {
-                    p1.getExpressions().add(FilterbyTime(root.get(User_.createtime), userRVo.getCreatetime(), criteriaBuilder));
-                }
-                if (userRVo.getLogintime() != null) {
-                    p1.getExpressions().add(FilterbyTime(root.get(User_.logintime), userRVo.getLogintime(), criteriaBuilder));
-                }
-                return p1;
+        Specification<User> specification = ((Specification<User>) (root, criteriaQuery, criteriaBuilder) -> {
+            Predicate p1 = criteriaBuilder.and();//创建and谓语
+            if (StringUtils.isNotBlank(userRVo.getName())) {//可选查询，StirngUtils检查==null,==""情况
+                p1.getExpressions().add(criteriaBuilder.equal(root.get(User_.name), userRVo.getName()));//User_是JPA元模型pom配置hibernate-jpamodelgen后mvnw clean install 就生成了
             }
+            if (StringUtils.isNotBlank(userRVo.getArea())) {
+                p1.getExpressions().add(criteriaBuilder.equal(root.get(User_.area), userRVo.getArea()));
+            }
+            if (userRVo.getCreatetime() != null) {
+                p1.getExpressions().add(FilterbyTime(root.get(User_.createtime), userRVo.getCreatetime(), criteriaBuilder));
+            }
+            if (userRVo.getLogintime() != null) {
+                p1.getExpressions().add(FilterbyTime(root.get(User_.logintime), userRVo.getLogintime(), criteriaBuilder));
+            }
+            return p1;
         });
         List<User> list = userRepository.findAll(specification);
         return ResponseEntity.ok(list);
@@ -69,15 +73,12 @@ public class AccountApi {
     @ApiOperation("查询账号page应用分页")
     @GetMapping("/page")
     public ResponseEntity<Page> pageUser(UserRVo userRVo, Pageable pageable) {
-        Page<User> page = userRepository.findAll(new Specification<User>() {
-            @Override
-            public Predicate toPredicate(Root<User> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder) {
-                Predicate p1 = StringUtils.isNotBlank(userRVo.getName()) ? criteriaBuilder.equal(root.get(User_.name), userRVo.getName()) : criteriaBuilder.conjunction();
-                Predicate p2 = StringUtils.isNotBlank(userRVo.getArea()) ? criteriaBuilder.equal(root.get(User_.area), userRVo.getArea()) : criteriaBuilder.conjunction();
-                Predicate p3 = FilterbyTime(root.get(User_.createtime), userRVo.getCreatetime(), criteriaBuilder);
-                Predicate p4 = FilterbyTime(root.get(User_.logintime), userRVo.getLogintime(), criteriaBuilder);
-                return criteriaBuilder.and(p1, p2, p3, p4);
-            }
+        Page<User> page = userRepository.findAll((Specification<User>) (root, criteriaQuery, criteriaBuilder) -> {//lambda 等同new Specification<User>() { @Overwrite public Predicate toPredicate(Root<User> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder) {内容}}
+            Predicate p1 = StringUtils.isNotBlank(userRVo.getName()) ? criteriaBuilder.equal(root.get(User_.name), userRVo.getName()) : criteriaBuilder.conjunction();
+            Predicate p2 = StringUtils.isNotBlank(userRVo.getArea()) ? criteriaBuilder.equal(root.get(User_.area), userRVo.getArea()) : criteriaBuilder.conjunction();
+            Predicate p3 = FilterbyTime(root.get(User_.createtime), userRVo.getCreatetime(), criteriaBuilder);
+            Predicate p4 = FilterbyTime(root.get(User_.logintime), userRVo.getLogintime(), criteriaBuilder);
+            return criteriaBuilder.and(p1, p2, p3, p4);
         }, pageable);
         return ResponseEntity.ok(page);
     }
@@ -90,19 +91,7 @@ public class AccountApi {
         CriteriaQuery<Tuple> query = builder.createTupleQuery();//获取query句柄
         Root<User> root = query.from(User.class);//选择from
         //构建SQL常量（build.Literal会加'',防止sql注入）,重写Expression基础类
-        class StaticExpression extends BasicFunctionExpression {
-
-            public StaticExpression(CriteriaBuilderImpl criteriaBuilder, Class javaType, String functionName) {
-                super(criteriaBuilder, javaType, functionName);
-            }
-
-            @Override
-            public String render(RenderingContext renderingContext) {
-                return getFunctionName();
-            }
-
-        }
-        Expression<String> day = new StaticExpression(null, String.class, "DAY");
+        StaticExpression day = new StaticExpression(null, String.class, "DAY");
         Expression<Integer> time = builder.function("TIMESTAMPDIFF", Integer.class, day, root.get(User_.createtime), root.get(User_.logintime));//MYSQL的TIMESTAMPDIFF函数
         //选择输出项
         query.multiselect(
@@ -115,7 +104,7 @@ public class AccountApi {
         List<Top> result = new ArrayList<>();
         int rank = 1;
         for (Tuple t : tuples) {
-            if (tuples.indexOf(t) != 0 && t.get(1, Integer.class) != result.get(result.size() - 1).getDay()) {//排除top10但是11名和10是一样的积分
+            if (tuples.indexOf(t) != 0 && t.get(1, Integer.class).equals(result.get(result.size() - 1).getDay())) {//排除top10但是11名和10是一样的积分
                 rank++;
             }
             result.add(new Top(rank, t.get(0, String.class), t.get(1, Integer.class)));
@@ -152,21 +141,20 @@ public class AccountApi {
     private Instant getQuarterTime(LocalDate time, boolean isQuarterStart) {
         //按照财报
         int month = time.getMonthValue();
-        LocalDate result = time;
         int months[] = {1, 4, 7, 10};
         if (!isQuarterStart) {
             months = new int[]{3, 6, 9, 12};
         }
         //检查是在哪个区间中
-        if (month >= 1 && month <= 3)
+        if (month <= 3)
             month = months[0];
-        else if (month >= 4 && month <= 6)
+        else if (month <= 6)
             month = months[1];
-        else if (month >= 7 && month <= 9)
+        else if (month <= 9)
             month = months[2];
         else
             month = months[3];
         //决定月初还是月末
-        return isQuarterStart ? result.withMonth(month).withDayOfMonth(1).atStartOfDay(ZoneId.systemDefault()).toInstant() : result.withMonth(month).withDayOfMonth(1).atStartOfDay(ZoneId.of("Asia/Shanghai")).minus(Duration.ofNanos(1)).toInstant();
+        return isQuarterStart ? time.withMonth(month).withDayOfMonth(1).atStartOfDay(ZoneId.systemDefault()).toInstant() : time.withMonth(month).withDayOfMonth(1).atStartOfDay(ZoneId.of("Asia/Shanghai")).minus(Duration.ofNanos(1)).toInstant();
     }
 }
