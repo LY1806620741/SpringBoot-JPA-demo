@@ -36,20 +36,8 @@ public class User implements Serializable {
     @ApiModelProperty("最近登陆时间")
     private Instant logintime;
 
-    public String getArea() {
-        return area;
-    }
-
     public void setArea(String area) {
         this.area = area;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getName() {
@@ -60,24 +48,12 @@ public class User implements Serializable {
         this.name = name;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
     public void setPassword(String password) {
         this.password = password;
     }
 
-    public Instant getCreatetime() {
-        return createtime;
-    }
-
     public void setCreatetime(Instant createtime) {
         this.createtime = createtime;
-    }
-
-    public Instant getLogintime() {
-        return logintime;
     }
 
     public void setLogintime(Instant logintime) {

@@ -1,9 +1,9 @@
 package com.example.demo.Vo.RequestVo;
 
 public class Top {
-    private Integer rank;
-    private String name;
-    private Integer day;
+    private final Integer rank;
+    private final String name;
+    private final Integer day;
 
     public Integer getDay() {
         return day;

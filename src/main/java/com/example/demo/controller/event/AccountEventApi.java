@@ -11,19 +11,21 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import javax.persistence.EntityManager;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 @RestController
 @RequestMapping("/account")
 @Api(tags = "账号Event")
 public class AccountEventApi {
 
-    @Autowired private QueryUserRepository userRepository;
-    @Autowired private EntityManager em;
+    //使用Set注入，Field注入(@Autowired private QueryUserRepository userRepository;)会有Warning,
+    private QueryUserRepository userRepository;
+
+    @Autowired
+    public void setUserRepository(QueryUserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @ApiOperation("创建账号")
     @PostMapping("/create")
@@ -60,9 +62,7 @@ public class AccountEventApi {
     @PostMapping("/login")
     public ResponseEntity<String> login(@ApiParam("用户名") @RequestParam String username,
                                         @ApiParam("密码") @RequestParam String password){
-        Optional<User> user=userRepository.findOne(Specification.where((root,query,build)->{
-            return build.and(build.equal(root.get(User_.name),username),build.equal(root.get(User_.password),password));
-        }));
+        Optional<User> user=userRepository.findOne(Specification.where((root,query,build)-> build.and(build.equal(root.get(User_.name),username),build.equal(root.get(User_.password),password))));
 
         if (user.isPresent()){
             user.get().setLogintime(Instant.now());//设置登陆时间

@@ -10,9 +10,6 @@ import com.example.demo.tools.StaticExpression;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.query.criteria.internal.CriteriaBuilderImpl;
-import org.hibernate.query.criteria.internal.compile.RenderingContext;
-import org.hibernate.query.criteria.internal.expression.function.BasicFunctionExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,8 +35,8 @@ public class AccountApi {
 //    QueryUserRepository userRepository;
 //    @Autowired
 //    EntityManager em;
-    private QueryUserRepository userRepository;
-    private EntityManager em;
+    private final QueryUserRepository userRepository;
+    private final EntityManager em;
     //用构造器注入就不会
     @Autowired
     public AccountApi(QueryUserRepository userRepository,EntityManager em) {
@@ -50,7 +47,7 @@ public class AccountApi {
     @ApiOperation("查询账号list")
     @GetMapping("/list")
     public ResponseEntity<List<User>> listUser(UserRVo userRVo) {
-        Specification<User> specification = ((Specification<User>) (root, criteriaQuery, criteriaBuilder) -> {
+        Specification<User> specification = Specification.<User>where(null).and((Specification<User>) (root, criteriaQuery, criteriaBuilder) -> {
             Predicate p1 = criteriaBuilder.and();//创建and谓语
             if (StringUtils.isNotBlank(userRVo.getName())) {//可选查询，StirngUtils检查==null,==""情况
                 p1.getExpressions().add(criteriaBuilder.equal(root.get(User_.name), userRVo.getName()));//User_是JPA元模型pom配置hibernate-jpamodelgen后mvnw clean install 就生成了
