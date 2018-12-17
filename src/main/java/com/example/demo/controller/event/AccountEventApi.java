@@ -7,7 +7,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +14,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/account")
+@RequestMapping(value = "/account",produces = "application/json;charset=utf-8")//默认返回编码是utf-8
 @Api(tags = "账号Event")
 public class AccountEventApi {
 
@@ -28,20 +27,19 @@ public class AccountEventApi {
     }
 
     @ApiOperation("创建账号")
-    @PostMapping("/create")
+    @PostMapping(value = "/create")
     public ResponseEntity<String> createUser(@ApiParam("用户名") @RequestParam String username,
                                              @ApiParam("密码") @RequestParam String password,
-                                             @ApiParam("地区") @RequestParam String area
+                                             @ApiParam("地区") @RequestParam(required = false) String area
     ){
-        try {
-            User user=new User();
-            user.setName(username);
-            user.setPassword(password);//直接明文密码了，强迫症用PasswordEncoder加密一下,org.springframework.security的
-            user.setArea(area);
-            userRepository.save(user);
-        }catch (DataIntegrityViolationException e){
+        if(userRepository.findOneByName(username).isPresent()){
             return ResponseEntity.badRequest().body("用户"+username+"已存在");//有提示的400
         }
+        User user=new User();
+        user.setName(username);
+        user.setPassword(password);//直接明文密码了，强迫症用PasswordEncoder加密一下,org.springframework.security的
+        user.setArea(area);
+        userRepository.save(user);
         return ResponseEntity.ok("用户"+username+"添加成功");//有提示的200回答
     }
 
@@ -69,7 +67,7 @@ public class AccountEventApi {
             userRepository.save(user.get());//如果jpa是默认持久映射的managed改动直接映射到数据库，如果是分离 detached的需要save
             return ResponseEntity.ok("登陆成功token");
         }else{
-            return ResponseEntity.ok("登陆失败");
+            return ResponseEntity.badRequest().body("登陆失败");
         }
     }
 

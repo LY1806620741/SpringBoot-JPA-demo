@@ -2,16 +2,20 @@ spring:
   application:
     name: Jpa Demo
   datasource:
-    url: jdbc:p6spy:mysql://localhost:3307/demo?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT
+    url: jdbc:p6spy:mysql://192.168.3.103:3307/demo?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT
     username: root
     password: usbw
     driver-class-name: com.p6spy.engine.spy.P6SpyDriver
   jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
+#    database-platform: org.hibernate.dialect.MySQLDialect
     database: mysql
     show-sql: false
 #    hibernate:
-#      ddl-auto: create
+#      ddl-auto: update
+  #ddl-auto:create----每次运行该程序，没有表格会新建表格，表内有数据会清空
+  #ddl-auto:create-drop----每次程序结束的时候会清空表
+  #ddl-auto:update----每次运行程序，没有表格会新建表格，表内有数据不会清空，只会更新
+  #ddl-auto:validate----运行程序会校验数据与数据库的字段类型是否相同，不同会报错
 server:
   port: 8080
 logging:

@@ -41,6 +41,7 @@ public class AccountApiTest {
 
     @Before
     public void setup(){
+        //初始化mockmvc，并使用page解码
         MockitoAnnotations.initMocks(this);
         this.restMockMvc = MockMvcBuilders.standaloneSetup(accountApi)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver()).build();
@@ -49,7 +50,9 @@ public class AccountApiTest {
     @Test
     @Transactional
     public void listUser() throws Exception {
+        //直接访问url /account/list,期待是200的返回码
         restMockMvc.perform(get("/account/list")).andExpect(status().isOk());
+        //新建三个有所区别的用户做测试用例
         User user1= EntityCreate.getnewUser();
         userRepository.save(user1);
         User user2= EntityCreate.getnewUser();
@@ -62,6 +65,7 @@ public class AccountApiTest {
         user3.setCreatetime(Instant.now().minus(Duration.ofDays(7)));//上一周
         user3.setLogintime(Instant.now().minus(Duration.ofDays(7)));
         userRepository.save(user3);
+        //进行不同参数的检验
         assertThat(JSONArray.fromObject(restMockMvc.perform(get("/account/list")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).size(),is(3));
         assertThat(JSONArray.fromObject(restMockMvc.perform(get("/account/list?name="+user1.getName())).andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).size(),is(1));
         assertThat(JSONArray.fromObject(restMockMvc.perform(get("/account/list?area=Liuzhou")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).size(),is(2));
@@ -72,6 +76,7 @@ public class AccountApiTest {
     @Test
     @Transactional
     public void pageUser() throws Exception {
+        //注释同上
         restMockMvc.perform(get("/account/list")).andExpect(status().isOk());
         User user1= EntityCreate.getnewUser();
         userRepository.save(user1);

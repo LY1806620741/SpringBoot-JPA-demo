@@ -114,7 +114,7 @@ public class AccountApi {
     }
 
     //按时间返回筛选条件ZoneId.systemDefault()与ZoneId.of("Asia/Shanghai")等同，中国东8区 GMT+8,Instant是格林尼治时间，比中国时间少8小时
-    private Predicate FilterbyTime(Path<Instant> timepath, TopRankTime topRankTime, CriteriaBuilder builder) {
+    public Predicate FilterbyTime(Path<Instant> timepath, TopRankTime topRankTime, CriteriaBuilder builder) {
         LocalDate now = LocalDate.now();
         if (topRankTime == null) return builder.conjunction();
         if (topRankTime.equals(TopRankTime.ThisWeek)) {

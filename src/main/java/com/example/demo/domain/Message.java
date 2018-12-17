@@ -18,7 +18,7 @@ public class Message {
     @Id
     @GeneratedValue
     private Long id;
-    @ManyToOne
+    @ManyToOne//多对一关联
     private User user;
     private String value;
     private Instant time;
@@ -29,16 +29,32 @@ public class Message {
         this.time=Instant.now();
     }
 
+    public Long getId() {
+        return id;
+    }
+
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public User getUser() {
+        return user;
     }
 
     public void setUser(User user) {
         this.user = user;
     }
 
+    public String getValue() {
+        return value;
+    }
+
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public Instant getTime() {
+        return time;
     }
 
     public void setTime(Instant time) {

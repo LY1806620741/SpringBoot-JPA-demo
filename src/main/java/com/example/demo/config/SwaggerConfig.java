@@ -1,5 +1,6 @@
 package com.example.demo.config;
 
+import com.google.common.base.Predicates;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import springfox.documentation.builders.ApiInfoBuilder;
@@ -20,7 +21,10 @@ public class SwaggerConfig {
                 .apiInfo(apiInfo())
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("com.example.demo"))
-                .paths(PathSelectors.regex("/account/.*"))
+                .paths(Predicates.or(
+                        PathSelectors.regex("/account/.*"),
+                        PathSelectors.regex("/message/.*")
+                ))
                 .build();
     }
 
