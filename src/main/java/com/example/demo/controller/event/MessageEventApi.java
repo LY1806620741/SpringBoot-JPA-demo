@@ -7,6 +7,7 @@ import com.example.demo.repository.query.QueryUserRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +38,16 @@ public class MessageEventApi {
         }else{
             return ResponseEntity.badRequest().body("ID为"+id+"的用户不存在");
         }
-
+    }
+    @ApiOperation("删除说说")
+    @PostMapping("/delete/{id}")
+    public ResponseEntity<String> delete(@ApiParam("说说id")Long id){
+        Optional<Message> message=messageRepository.findById(id);
+        if (message.isPresent()){
+            messageRepository.delete(message.get());
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON_UTF8).body("删除成功");//contentType决定浏览器收到的header是application/json;charset=utf-8,解决中文乱码
+        }else{
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON_UTF8).body("该说说不存在");
+        }
     }
 }
