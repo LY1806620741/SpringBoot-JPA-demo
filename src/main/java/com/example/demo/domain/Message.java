@@ -23,6 +23,8 @@ public class Message {
     private String value;
     private Instant time;
 
+    public Message(){this.time=Instant.now();}//如果有自定义的构造函数，那么就需要写这个默认的构造函数，不然jpa查询的时候会报错 No default constructor for entity
+
     public Message(User user, String data) {
         this.user=user;
         this.value=data;

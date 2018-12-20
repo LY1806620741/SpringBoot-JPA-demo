@@ -1,5 +1,6 @@
 package com.example.demo.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.Cache;
@@ -25,6 +26,7 @@ public class User implements Serializable {
     private String name;
 
     @ApiModelProperty("密码")
+    @JsonIgnore//查询的时候不显示密码
     private String password;
 
     @ApiModelProperty("地区")
