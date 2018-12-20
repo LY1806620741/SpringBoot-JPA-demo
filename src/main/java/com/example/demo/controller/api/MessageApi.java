@@ -13,6 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.persistence.EntityManager;
+import javax.persistence.Tuple;
 import javax.persistence.criteria.Predicate;
 import java.time.Instant;
 import java.util.List;
@@ -23,16 +26,14 @@ import java.util.List;
 public class MessageApi {
     @Autowired AccountApi accountApi;
     @Autowired private QueryMessageRepository queryMessageRepository;
+    @Autowired private EntityManager em;
 
     //解决无法接收Instant类型问题
     @ModelAttribute
     Instant initInstant() {
         return Instant.now();
     }
-//    动态改变时间，失败
-//    public MessageApi() throws NoSuchMethodException, NoSuchFieldException, IllegalAccessException {
-//        setAnnotationValue(this.getClass().getMethod("countbycursor",Instant.class,Instant.class).getParameterAnnotations()[0][0],"defaultValue",Instant.now());
-//    }
+
     @GetMapping("/list")
     @ApiOperation("说说列表")
     public ResponseEntity<List<Message>> list(@ApiParam("按用户id查看")@RequestParam(required = false) Long userid,@ApiParam("按发表时间查看") @RequestParam(required = false)TopRankTime saytime,@ApiParam("按发表内容查看") String saydata){
@@ -83,13 +84,23 @@ public class MessageApi {
             return p;
         })));
     }
-//   反射改变注解，失败
-//    public static void setAnnotationValue(Annotation annotation, String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
-//        InvocationHandler handler = Proxy.getInvocationHandler(annotation);
-//        Field hField = handler.getClass().getDeclaredField("memberValues");
-//        hField.setAccessible(true);
-//        Map memberValues = (Map) hField.get(handler);
-//        memberValues.put(fieldName, value);
-//    }
+
+    //使用原生sql查询
+    @ApiOperation("用户说说发布统计")
+    @GetMapping("/saytop{num}")
+    public ResponseEntity<List<Tuple>> saytop(@ApiParam(value = "统计前几",defaultValue = "10") @PathVariable Integer num){
+        //使用原生sql语句，选择用户名字和用户名字出现总数，选择user和message表并定义别名u和m,使用用户id为内连接标志，按用户名分组，按用户名出现次数倒序排序，限制查询个数num
+        //这么使用存在有一个sql注入点limit，理论来说springboot会过滤和筛选最终num一定会是整型所以sql注入安全，但是为了以防万一不建议这么做，可以查出来以后筛选,或者getResultList之前.setMaxResults(num)
+        //使用Tuple元组的优势是不定义个数，但缺点是没有使用@ApiModelProperty("")，在swagger文档里没有响应字段的备注，对于增加前后端沟通成本，可以新建并转换成一个带备注注解list视图再返回
+        List<Tuple> result=em.createNativeQuery("select u.name,count(u.name) from user u join message m where m.user_id=u.id group by u.name order by count(u.name) desc limit "+num+";").getResultList();
+        return ResponseEntity.ok(result);
+    }
+
+    //使用jpa repository原生sql语句
+    @ApiOperation("查看今天发布的说说")
+    @GetMapping("/today")
+    public ResponseEntity<List<Message>> today(){
+        return ResponseEntity.ok(queryMessageRepository.today());
+    }
 
 }

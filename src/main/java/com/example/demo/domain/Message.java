@@ -1,6 +1,7 @@
 package com.example.demo.domain;
 
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -17,10 +18,17 @@ public class Message {
 
     @Id
     @GeneratedValue
+    @ApiModelProperty("说说id")
     private Long id;
     @ManyToOne//多对一关联
+
+    @ApiModelProperty("用户")
     private User user;
+
+    @ApiModelProperty("内容")
     private String value;
+
+    @ApiModelProperty("发布时间")
     private Instant time;
 
     public Message(){this.time=Instant.now();}//如果有自定义的构造函数，那么就需要写这个默认的构造函数，不然jpa查询的时候会报错 No default constructor for entity

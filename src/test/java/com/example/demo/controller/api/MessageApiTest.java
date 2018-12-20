@@ -111,8 +111,8 @@ public class MessageApiTest {
         User user2=EntityCreate.savenewUser(queryUserRepository,"user2");
         //新建说说
         EntityCreate.savenewMessage(queryMessageRepository,user1);
-        //特殊30天前发的说说
         EntityCreate.savenewMessage(queryMessageRepository,user2);
+        //特殊30天前发的说说
         Message message=EntityCreate.getnewMessage(user1,"30天前发的");
         message.setTime(Instant.now().minus(Duration.ofDays(30)));
         queryMessageRepository.save(message);
@@ -122,5 +122,47 @@ public class MessageApiTest {
         restMockMvc.perform(get("/message/countbycursor").param("right", Instant.now().toString())).andExpect(status().isOk()).andExpect(content().string("3"));
         //右标是一天前到现在 期望查出2
         restMockMvc.perform(get("/message/countbycursor").param("left",Instant.now().minus(Duration.ofDays(1)).toString()).param("right", Instant.now().toString())).andExpect(status().isOk()).andExpect(content().string("2"));
+    }
+
+
+    @Test
+    @Transactional
+    public void saytop() throws Exception {
+        //新建用户
+        User user1=EntityCreate.savenewUser(queryUserRepository,"user1");
+        User user2=EntityCreate.savenewUser(queryUserRepository,"user2");
+        EntityCreate.savenewUser(queryUserRepository,"user3");
+        //新建说说
+        EntityCreate.savenewMessage(queryMessageRepository,user1);
+        EntityCreate.savenewMessage(queryMessageRepository,user2);
+        //特殊30天前发的说说
+        Message message=EntityCreate.getnewMessage(user1,"30天前发的");
+        message.setTime(Instant.now().minus(Duration.ofDays(30)));
+        queryMessageRepository.save(message);
+
+        //查询前10个（默认）
+        restMockMvc.perform(get("/message/saytop")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))//总条数2条
+                .andExpect(jsonPath("$.[1].[0]").value(user2.getName()))//第二名的是user2
+                .andExpect(jsonPath("$.[1].[1]").value(1));//第二名的说说数是1
+        //只要一个人
+        restMockMvc.perform(get("/message/saytop1")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))//总条数1
+                .andExpect(jsonPath("$.[0].[0]").value(user1.getName()))//第一名是user1
+                .andExpect(jsonPath("$.[0].[1]").value(2));//第一名的说说数是2
+    }
+
+    @Test
+    @Transactional
+    public void today() throws Exception {
+        //新建用户
+        User user1=EntityCreate.savenewUser(queryUserRepository,"user1");
+        //新建说说
+        EntityCreate.savenewMessage(queryMessageRepository,user1);
+        EntityCreate.savenewMessage(queryMessageRepository,user1);
+
+        restMockMvc.perform(get("/message/today")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))//期待总条数是2
+                .andExpect(jsonPath("$.[0].user.name").value(user1.getName()));//说说的发布者是user1
     }
 }
